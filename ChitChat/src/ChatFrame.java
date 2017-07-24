@@ -52,9 +52,9 @@ public class ChatFrame extends JFrame implements ActionListener, KeyListener {
 	private JButton prijava;
 	private JButton odjava;
 	private JTextField zasebno;
-	private JComboBox<String> cb;
+	private JComboBox<String> izbira;
 	
-	private boolean isFirstRun=true;
+	private boolean prviPogon=true;
 	ReceiveRobot preveriNovaSporocila;
 
 	public ChatFrame() {
@@ -125,9 +125,9 @@ public class ChatFrame extends JFrame implements ActionListener, KeyListener {
 		cbConstraint.gridy = 3;
 		
 		String[] moznosti = { "SKUPINSKO", "ZASEBNO" };
-		this.cb = new JComboBox<String>(moznosti);
-	    cb.setVisible(true);
-	    pane.add(cb, cbConstraint);
+		this.izbira = new JComboBox<String>(moznosti);
+	    izbira.setVisible(true);
+	    pane.add(izbira, cbConstraint);
 	    
 		 //Dodam polje za vzdevek na glavno platno.
 		this.vzdevek = new JTextField(40);
@@ -228,25 +228,26 @@ public class ChatFrame extends JFrame implements ActionListener, KeyListener {
 	        try {URI uri = new URIBuilder("http://chitchat.andrej.com/users")
 					.addParameter("username", this.vzdevek.getText()).build();
 				HttpResponse response = Request.Post(uri).execute().returnResponse();
-				InputStream responseText = null;
+				InputStream responseBody = null;
 				
 				if (response.getStatusLine().getStatusCode()==200) {
 				//Uspešna prijava
-					if (isFirstRun) {
+					if (prviPogon) {
 						preveriNovaSporocila.activate();
-						isFirstRun=false;
+						prviPogon=false;
 					}
 					this.prijava.setEnabled(false);
 					this.odjava.setEnabled(true);
 					this.input.setEditable(true);
 					this.vzdevek.setEditable(false);
 					this.zasebno.setEditable(true);
-					responseText=response.getEntity().getContent();
+					responseBody=response.getEntity().getContent();
 				}else if(response.getStatusLine().getStatusCode()==403){
 				//Neuspešna prijava
-					responseText=response.getEntity().getContent();
+					responseBody=response.getEntity().getContent();
 				}
-				this.dodajSporocilo("", "-----------------" + getStringFromInputStream(responseText) + "-----------------");
+				this.dodajSporocilo("", "-----------------" + 
+				getStringFromInputStream(responseBody) + "-----------------");
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			} catch (URISyntaxException e1) {
@@ -266,7 +267,8 @@ public class ChatFrame extends JFrame implements ActionListener, KeyListener {
 				this.input.setEditable(false);
 				this.vzdevek.setEditable(true);
 				this.zasebno.setEditable(false);
-				this.dodajSporocilo("", "-----------------" + responseBody + "-----------------");
+				this.dodajSporocilo("", "-----------------" + 
+				responseBody + "-----------------");
 	        } catch (IOException e1) {
 	            e1.printStackTrace();
 	        } catch (URISyntaxException e1) {
@@ -341,7 +343,7 @@ public class ChatFrame extends JFrame implements ActionListener, KeyListener {
 				try {URI uri = new URIBuilder("http://chitchat.andrej.com/messages")
 		    	          		.addParameter("username", this.vzdevek.getText())
 		    	          		.build();
-					if (this.cb.getSelectedItem() == "ZASEBNO") {
+					if (this.izbira.getSelectedItem() == "ZASEBNO") {
 						String message = "{ \"global\" : false, \"recipient\" : \"" + this.zasebno.getText()
 								+ "\", \"text\" : \"" + this.input.getText() + "\"}";
 						String responseBody = Request.Post(uri)
